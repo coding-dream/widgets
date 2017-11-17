@@ -1,7 +1,6 @@
 package com.less.uis;
 
 import android.content.Context;
-import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
@@ -10,11 +9,9 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.less.common.TDevice;
 import com.less.common.UiUtil;
 
 public class TitleBar extends FrameLayout {
-    private static int EXT_PADDING_TOP;
     private TextView mTitle;
     private ImageView mIcon;
 
@@ -76,29 +73,12 @@ public class TitleBar extends FrameLayout {
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        float d = getResources().getDisplayMetrics().density;
-        int minH = (int) (d * 36 + UiUtil.getStatusBarHeight(getContext()));
+        float density = getResources().getDisplayMetrics().density;
+        // minH = 36dp + statusBar 大约56左右
+        int minH = (int) (density * 36 + UiUtil.getStatusBarHeight(getContext()));
 
         heightMeasureSpec = MeasureSpec.makeMeasureSpec(minH, MeasureSpec.EXACTLY);
 
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-    }
-
-    public int getExtPaddingTop(Resources resources) {
-        if (EXT_PADDING_TOP > 0) {
-            return EXT_PADDING_TOP;
-        }
-
-        try {
-            Class<?> clazz = Class.forName("com.android.internal.R$dimen");
-            Object object = clazz.newInstance();
-            int height = Integer.parseInt(clazz.getField("status_bar_height")
-                    .get(object).toString());
-            EXT_PADDING_TOP = resources.getDimensionPixelSize(height);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return (int) TDevice.dp2px(getContext(),25);
-        }
-        return EXT_PADDING_TOP;
     }
 }
