@@ -68,7 +68,9 @@ public class TitleBar extends FrameLayout {
     }
 
     public void setIconOnClickListener(OnClickListener listener) {
-        mIcon.setOnClickListener(listener);
+        if (listener != null) {
+            mIcon.setOnClickListener(listener);
+        }
     }
 
     @Override
