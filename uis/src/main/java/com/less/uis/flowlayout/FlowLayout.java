@@ -31,15 +31,16 @@ import java.util.List;
 public class FlowLayout  extends ViewGroup {
     private float mVerticalSpacing;
     private float mHorizontalSpacing;
-    private int mTextColor = Color.BLACK;
+    private int mTextColor;
+    private int mTextSize;
+    private int mTvBackground;
 
-    private int mTextPaddingH = (int) dip2px(7);
-    private int mTextPaddingV = (int) dip2px(4);
+    private int mTextPaddingH;
+    private int mTextPaddingV;
 
     private int x_index = 0;
     private int y_index = 1;
 
-    private static final int DEFAULT_SPACE = 16;
     private List<ViewTag> viewTags = new LinkedList<>();
 
     public interface OnFlowItemClickListener {
@@ -54,13 +55,14 @@ public class FlowLayout  extends ViewGroup {
 
         TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.FlowLayout);
 
-        float vSpace = dip2px(a.getDimension(R.styleable.FlowLayout_vSpace,DEFAULT_SPACE));
-        float hSpace = dip2px(a.getDimension(R.styleable.FlowLayout_hSpace,DEFAULT_SPACE));
+        mVerticalSpacing = a.getDimension(R.styleable.FlowLayout_vSpace,dip2px(16));
+        mHorizontalSpacing = a.getDimension(R.styleable.FlowLayout_hSpace,dip2px(16));
+        mTextSize = a.getDimensionPixelOffset(R.styleable.FlowLayout_mTextSize,sp2px(8));
+        mTextColor = a.getColor(R.styleable.FlowLayout_mTextColor, Color.GRAY);
+        mTvBackground = a.getResourceId(R.styleable.FlowLayout_mTvBackground,android.R.drawable.list_selector_background);
+        mTextPaddingH = a.getDimensionPixelOffset(R.styleable.FlowLayout_mTextPaddingH,dip2px(7));
+        mTextPaddingV = a.getDimensionPixelOffset(R.styleable.FlowLayout_mTextPaddingV,dip2px(4));
         a.recycle();
-
-        mVerticalSpacing = vSpace;
-        mHorizontalSpacing = hSpace;
-
     }
 
     public void setFlowListener(List<String> list, final OnFlowItemClickListener onFlowItemClickListener) {
@@ -68,10 +70,11 @@ public class FlowLayout  extends ViewGroup {
             final TextView tv = new TextView(getContext());
 
             tv.setText(list.get(i));
+            tv.setTextSize(mTextSize);
             tv.setTextColor(mTextColor);
             tv.setGravity(Gravity.CENTER);
-            // tv.setPadding(mTextPaddingH, mTextPaddingV, mTextPaddingH, mTextPaddingV);
-
+            tv.setPadding(mTextPaddingH, mTextPaddingV, mTextPaddingH, mTextPaddingV);
+            tv.setBackgroundResource(mTvBackground);
             tv.setClickable(true);
             this.addView(tv,new MyLayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT));
             tv.setOnClickListener(new OnClickListener() {
@@ -213,9 +216,9 @@ public class FlowLayout  extends ViewGroup {
     }
 
     // dp2ptx
-    public float dip2px(float dpValue) {
+    public int dip2px(float dpValue) {
         float scale = getContext().getResources().getDisplayMetrics().density;
-        return (dpValue * scale + 0.5f);
+        return (int) (dpValue * scale + 0.5f);
     }
 
     private int sp2px(float spValue) {
