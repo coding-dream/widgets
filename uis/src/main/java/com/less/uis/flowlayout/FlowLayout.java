@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -26,6 +25,7 @@ import java.util.List;
  *     而且onMeasure和onLayout是分不开的两个操作,判断逻辑几乎一样,能否把主要的逻辑都放入到onMeasure中且给每个子View加上标号,那么所有类型的ViewGroup的onLayout代码逻辑就几乎一模一样了.
  *     这样不仅使自定义ViewGroup变得更加简单,甚至可以抽出公共逻辑,让自定义ViewGroup只需写一个方法即可实现清晰逻辑功能强大的ViewGroup.
  * </p>
+ * fix bug1: AS自动导包R资源某个paddingTop变量,导致布局和理想不一致,需额外注意工具带来的坑爹bug.
  */
 
 public class FlowLayout  extends ViewGroup {
@@ -81,7 +81,6 @@ public class FlowLayout  extends ViewGroup {
                 }
             });
         }
-        invalidate();
     }
 
     @Override
@@ -99,8 +98,7 @@ public class FlowLayout  extends ViewGroup {
         int paddingBottom = getPaddingBottom();
 
         int currentUsed = 0;
-        float currentLeft = paddingLeft + mHorizontalSpacing;
-        float currentTop = paddingTop + mVerticalSpacing;
+
         // 这里把左边一个也减去为了更好计算
         int canUsed = (int) (widthSize - paddingLeft - paddingRight - mHorizontalSpacing);
         // 每行的高度即每个childView的高度
@@ -115,7 +113,6 @@ public class FlowLayout  extends ViewGroup {
 
                 int childWidth = child.getMeasuredWidth();
                 int childHeight = child.getMeasuredHeight();
-                Log.d("wl", "chidlWidth : " + childWidth + " childHeight: " + childHeight);
 
                 lineHeight = childHeight;
 
@@ -124,26 +121,16 @@ public class FlowLayout  extends ViewGroup {
                     currentUsed = (int) (childWidth + mHorizontalSpacing);
                     x_index = 1;
                     y_index +=1;
-                    if (y_index != 0) {
-                        currentTop += childHeight + mVerticalSpacing;
-                    }
                 }else{
                     x_index +=1;
-                    if (x_index != 0) {
-                        currentLeft += childWidth + mHorizontalSpacing;
-                    }
                 }
-
                 tag = new ViewTag();
                 tag.position = i;
                 tag.x_index = x_index;
                 tag.y_index = y_index;
-                tag.left = (int) currentLeft;
-                tag.top = (int) currentTop;
                 viewTags.add(tag);
             }
         }
-        Log.e("wl","onMeasure ========> " + viewTags.toString());
         // 计算FlowLayout的高度
         float wannaHeight = paddingTop + paddingBottom + lineHeight * y_index + mVerticalSpacing * (y_index + 1);
         setMeasuredDimension(widthSize, (int) wannaHeight);
@@ -164,6 +151,8 @@ public class FlowLayout  extends ViewGroup {
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
 
         float childCount = getChildCount();
+        int paddingTop = getPaddingTop();
+        int paddingLeft = getPaddingLeft();
 
         // 这里有点小瑕疵,虽然上面计算了childView的margin,但是这里并没有根据childView的margin布局,为了逻辑简单,暂时就不支持childView的margin属性了.
         for (int i = 0; i < childCount; i++){
@@ -175,8 +164,20 @@ public class FlowLayout  extends ViewGroup {
                 int childHeight = childView.getMeasuredHeight();
                 ViewTag tag = viewTags.get(i);
 
+                int childLeft = (int) (paddingLeft + mHorizontalSpacing);
+                int childTop = (int) ( paddingTop + mVerticalSpacing + (childHeight + mVerticalSpacing) * (tag.y_index - 1) );
+                for(int j = 0;j < tag.position;j++) {
+                    ViewTag temp = viewTags.get(j);
+                    // 找到在当前view之前且在同一个Y坐标的所有子View
+                    if (tag.y_index == temp.y_index) {
+                        View beforeView = getChildAt(temp.position);
+                        int beforeViewWidth = beforeView.getMeasuredWidth();
+                        childLeft += beforeViewWidth + mHorizontalSpacing;
+                    }
+                }
+
                 // 计算每个childView的左顶点坐标
-                childView.layout(tag.left,tag.top,tag.left + childWidth,tag.top + childHeight);
+                childView.layout(childLeft,childTop,childLeft + childWidth,childTop + childHeight);
             }
         }
     }
@@ -227,8 +228,6 @@ class ViewTag {
     public int position;
     public int x_index;
     public int y_index;
-    public int left;
-    public int top;
 
     @Override
     public String toString() {
