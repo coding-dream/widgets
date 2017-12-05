@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.util.AttributeSet;
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,6 +12,8 @@ import android.widget.TextView;
 
 import com.less.uis.R;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -25,7 +28,7 @@ import java.util.List;
  *     而且onMeasure和onLayout是分不开的两个操作,判断逻辑几乎一样,能否把主要的逻辑都放入到onMeasure中且给每个子View加上标号,那么所有类型的ViewGroup的onLayout代码逻辑就几乎一模一样了.
  *     这样不仅使自定义ViewGroup变得更加简单,甚至可以抽出公共逻辑,让自定义ViewGroup只需写一个方法即可实现清晰逻辑功能强大的ViewGroup.
  * </p>
- * fix bug1: AS自动导包R资源某个paddingTop变量,导致布局和理想不一致,需额外注意工具带来的坑爹bug.
+ * fix bug: AS自动导包R资源某个paddingTop变量,导致布局和理想不一致,需额外注意工具带来的坑爹bug.
  */
 
 public class FlowLayout  extends ViewGroup {
@@ -57,20 +60,37 @@ public class FlowLayout  extends ViewGroup {
 
         mVerticalSpacing = a.getDimension(R.styleable.FlowLayout_vSpace,dip2px(16));
         mHorizontalSpacing = a.getDimension(R.styleable.FlowLayout_hSpace,dip2px(16));
-        mTextSize = a.getDimensionPixelOffset(R.styleable.FlowLayout_mTextSize,sp2px(8));
-        mTextColor = a.getColor(R.styleable.FlowLayout_mTextColor, Color.GRAY);
-        mTvBackground = a.getResourceId(R.styleable.FlowLayout_mTvBackground,android.R.drawable.list_selector_background);
-        mTextPaddingH = a.getDimensionPixelOffset(R.styleable.FlowLayout_mTextPaddingH,dip2px(7));
+        mTextSize = a.getDimensionPixelOffset(R.styleable.FlowLayout_mTextSize,sp2px(15));
+        mTextColor = a.getColor(R.styleable.FlowLayout_mTextColor, Color.parseColor("#db0a71e1"));
+        mTvBackground = a.getResourceId(R.styleable.FlowLayout_mTvBackground,R.drawable.flow_text_selector);
+        mTextPaddingH = a.getDimensionPixelOffset(R.styleable.FlowLayout_mTextPaddingH,dip2px(10));
         mTextPaddingV = a.getDimensionPixelOffset(R.styleable.FlowLayout_mTextPaddingV,dip2px(4));
         a.recycle();
     }
-
+    public void setFlowListener(List<String> list, boolean sort,final OnFlowItemClickListener onFlowItemClickListener) {
+        if (sort) {
+            Collections.sort(list, new Comparator<String>() {
+                @Override
+                public int compare(String o1, String o2) {
+                    if (o1.length() == o2.length()) {
+                        return 0;
+                    } else if (o1.length() > o2.length()) {
+                        return 1;
+                    } else if (o1.length() < o2.length()) {
+                        return -1;
+                    }
+                    return 0;
+                }
+            });
+        }
+        setFlowListener(list,onFlowItemClickListener);
+    }
     public void setFlowListener(List<String> list, final OnFlowItemClickListener onFlowItemClickListener) {
         for (int i = 0; i < list.size(); i++) {
             final TextView tv = new TextView(getContext());
 
             tv.setText(list.get(i));
-            tv.setTextSize(mTextSize);
+            tv.setTextSize(TypedValue.COMPLEX_UNIT_PX, mTextSize);
             tv.setTextColor(mTextColor);
             tv.setGravity(Gravity.CENTER);
             tv.setPadding(mTextPaddingH, mTextPaddingV, mTextPaddingH, mTextPaddingV);
@@ -222,8 +242,8 @@ public class FlowLayout  extends ViewGroup {
     }
 
     private int sp2px(float spValue) {
-        final float fontScale = getContext().getResources().getDisplayMetrics().scaledDensity;
-        return (int) (spValue * fontScale + 0.5f);
+        return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, spValue,
+                getResources().getDisplayMetrics());
     }
 }
 
@@ -231,13 +251,4 @@ class ViewTag {
     public int position;
     public int x_index;
     public int y_index;
-
-    @Override
-    public String toString() {
-        return "ViewTag {" +
-                "position=" + position +
-                ", x_index=" + x_index +
-                ", y_index=" + y_index +
-                '}' + "\r\n";
-    }
 }
