@@ -45,7 +45,7 @@ public class TitleBar extends FrameLayout {
         }
 
         // Set Background
-        setBackgroundColor(getResources().getColor(R.color.main_green));
+        setBackgroundColor(getResources().getColor(R.color.main_blue));
 
         // Init padding
         setPadding(getLeft(), getTop() + UiUtil.getStatusBarHeight(getContext()), getRight(), getBottom());
